@@ -67,11 +67,15 @@ public class DiscordIdentityProvider extends AbstractOAuth2IdentityProvider<Disc
 
     @Override
     protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
-        BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
+        String id = getJsonProperty(profile, "id");
+        String email = getJsonProperty(profile, "email");
+        String username = getJsonProperty(profile, "username");
 
-        user.setUsername(getJsonProperty(profile, "username") + "#" + getJsonProperty(profile, "discriminator"));
-        user.setEmail(getJsonProperty(profile, "email"));
-        user.setIdpConfig(getConfig());
+        BrokeredIdentityContext user = new BrokeredIdentityContext(id, getConfig());
+
+        user.setUsername(id);
+        user.setEmail(email);
+        user.setFirstName(username);
         user.setIdp(this);
 
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
@@ -81,7 +85,6 @@ public class DiscordIdentityProvider extends AbstractOAuth2IdentityProvider<Disc
 
     @Override
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-        log.debug("doGetFederatedIdentity()");
         JsonNode profile = null;
         try {
             profile = SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
